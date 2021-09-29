@@ -1,0 +1,34 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ApimServiceName": { 
+      "type": "string",
+      "defaultValue": "d"
+    },
+    "LAs_general_info": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "LA_name": "la1",
+          "LA_rg": "INT01",
+          "LA_workflow": "1.0"
+        },
+        {
+          "LA_name": "la2",
+          "LA_rg": "INT02",
+          "LA_workflow": "2.0"
+        }
+      ]
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "dev"
+    }
+  },
+  "variables": {
+        "applicationInsight": "[concat('shared-applicationinsights-', parameters('environment'))]"
+  }, 
+  "resources": []
+  
+}
