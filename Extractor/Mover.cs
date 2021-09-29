@@ -86,6 +86,7 @@ namespace Extractor
             JObject parameters = CreateParameters(template, paramArr);
             result.Add("parameters", parameters);
 
+
             // Add the resources 
             JArray resources = new JArray(resourcesList);
             result.Add("resources", resources);

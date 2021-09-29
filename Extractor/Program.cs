@@ -51,33 +51,42 @@ namespace Extractor
 
 
             foreach (dynamic resource in data["resources"]) {
-                switch (resource.type.ToString())
+                switch (resource["type"].ToString())
                 {
                     //The Api (api & api policy):
-                    case "Microsoft.ApiManagement/service/apis":
+                    case "Microsoft.ApiManagement/service/apis":  // leave the dependencies
                         theApi.Add(resource);
                         break;
-                    case "Microsoft.ApiManagement/service/apis/policies":
+                    case "Microsoft.ApiManagement/service/apis/policies": // leave the dependencies
                         theApi.Add(resource);
                         break;
                     
                     // The schema:
                     case "Microsoft.ApiManagement/service/apis/schemas":
+                        resource["dependsOn"] = new JArray(); // remove the dependencies
                         schemas.Add(resource);
                         break;
                     
                     // The operations (& their operations):
-                    case string s when s.StartsWith("Microsoft.ApiManagement/service/apis/operations"):
+                    case "Microsoft.ApiManagement/service/apis/operations":
+                        resource["dependsOn"] = new JArray(); // remove the dependencies
                         operations.Add(resource);
+                        break;
+                    
+                    case "Microsoft.ApiManagement/service/apis/operations/policies":
+                        dynamic res = FixOperationPolicyDependencies(resource); // FIX the dependencies
+                        operations.Add(res);
                         break;
                     
                     // The diagnostics:
                     case string s when s.Contains("diagnostics"):
+                        resource["dependsOn"] = new JArray();
                         diagnostics.Add(resource);
                         break;
                     
                     // The products:
                     case string s when s.Contains("products"):
+                        resource["dependsOn"] = new JArray();
                         products.Add(resource);
                         break;
                     // Other stuff:
@@ -86,8 +95,6 @@ namespace Extractor
                         break;
 
                 }
-                
-                
                 
                 
                 Console.WriteLine(resource.type);
@@ -119,7 +126,20 @@ namespace Extractor
 
         }
 
-        
-        
+        private JObject FixOperationPolicyDependencies(dynamic resource)
+        {
+            JArray originalDependencies = resource["dependsOn"];
+            JArray newDependencies = new JArray();
+            
+            foreach (dynamic dependency in originalDependencies)
+            {
+                string dependencyValue = (string) dependency.Value;
+                if (dependencyValue.StartsWith("[resourceId('Microsoft.ApiManagement/service/apis/operations', parameters('ApimServiceName'),"))
+                    newDependencies.Add(dependency);
+            }
+
+            resource["dependsOn"] = newDependencies; // Reset the dependencies
+            return resource;
+        }
     }
 }
