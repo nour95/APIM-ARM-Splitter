@@ -27,6 +27,8 @@ You may also need to install the following package to make this project work in 
 
 # TODOs:
 - have a check to empty or null values
+- need to remove the dependencies in the splited files
+- add variabls to AI
 
 
 

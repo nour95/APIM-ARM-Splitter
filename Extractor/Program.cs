@@ -10,41 +10,29 @@ namespace Extractor
 {
     class FileHandler
     {
-        private string sourcePath;        
-        private string destinationPath;
-        private string templateFile;
+        private readonly string _sourcePath;        
+        private Mover mover;
 
-        public FileHandler(string apiFileSourcePath)
+        public FileHandler(string apiFileSourcePath, string destinationPath)
         {
-            this.sourcePath = apiFileSourcePath;
-            this.templateFile = @"Template.json";
+            this._sourcePath = apiFileSourcePath;
+            this.mover = new Mover(destinationPath);
         }
 
 
 
         public string ReadFile()
         {
-            string fileName = $"{sourcePath}gk-api-dev-serviceagreements-api.template.json";
-            // This text is added only once to the file.
+            string fileName = $"{_sourcePath}";
             if (!File.Exists(fileName))
             {
-                Console.WriteLine($"The file {fileName} doesn't exist");
-            }  
-
-            // This text is always added, making the file longer over time
-            // if it is not deleted.
-            // string appendText = "This is extra text" + Environment.NewLine;
-            // File.AppendAllText(path, appendText, Encoding.UTF8);
+                throw new FileNotFoundException($"The file {fileName} doesn't exist");
+            }
 
             // Open the file to read from.
             string readText = File.ReadAllText(fileName);
-            
-            
-            // Create a file to write to.
-            // string createText = "Hello and Welcome" + Environment.NewLine;
-            // File.WriteAllText(path, createText, Encoding.UTF8);
-            
-            // Console.WriteLine(readText);
+
+
             return readText;
         }
 
@@ -106,18 +94,18 @@ namespace Extractor
             }
             
             // Move the API ('service/apis' + 'service/apis/policy')
-            MoveTheAPI(theApi);
+            mover.MoveTheApi(theApi);
             // Move the diagnostics to another file
-            MoveDiagnostic(diagnostics);
+            mover.MoveDiagnostic(diagnostics);
             // Move the operations and their policies to another file
-            MoveOpertations(operations);
+            mover.MoveOperations(operations);
             //Move the schemas
-            MoveSchemas(schemas);
+            mover.MoveSchemas(schemas);
             
             //Move the schemas
-            MoveProducts(products);
+            mover.MoveProducts(products);
             //Move the schemas
-            MoveOtherThings(otherThings);
+            mover.MoveOtherThings(otherThings);
             
             // Move all other things to another file
             
@@ -132,77 +120,6 @@ namespace Extractor
         }
 
         
-        private void MoveTheAPI(List<dynamic> list) // need APIM_name only
-        {
-            Console.WriteLine("In TheApi Handler");
-            if (!File.Exists(this.templateFile))
-            {
-                Console.WriteLine($"The file {this.templateFile} doesn't exist" );
-            } 
-            
-            string templateFile = File.ReadAllText(this.templateFile);
-            dynamic template = JObject.Parse(templateFile);
-
-            JObject result = new JObject();
-            result.Add("$schema", template["$schema"]);
-            result.Add("contentVersion", template.contentVersion);
-
-            JObject parameters = new JObject();
-            parameters.Add("ApimServiceName", template.parameters.ApimServiceName);
-            parameters.Add("LAs_general_info", template.parameters.LAs_general_info);
-            
-            result.Add("parameters", parameters);
-
-            JArray resources = new JArray(list);
-            result.Add("resources", resources);
-            
-
-            string x = JsonConvert.SerializeObject(result);
-            
-            // if (!File.Exists("theApi.json"))
-            // {
-                // Console.WriteLine($"The file {fileName} doesn't exist");
-                File.WriteAllText("theApi.json", x, Encoding.UTF8);
-            // }  
-
-            Console.WriteLine("End Of method");
-
-
-        }
         
-        private void MoveOpertations(List<object> list)
-        {
-            Console.WriteLine("In Operation Handler");
-        }
-        private void MoveDiagnostic(List<object> list)
-        {
-            Console.WriteLine("In diagnostics Handler");
-        }
-        private void MoveSchemas(List<object> list)
-        {
-            Console.WriteLine("In schemas Handler");
-        }
-        
-        private void MoveProducts(List<object> list)
-        {
-            Console.WriteLine("In products Handler");
-        }
-        private void MoveOtherThings(List<object> list)
-        {
-            Console.WriteLine("In other stuff Handler");
-        }
-
-        static void Main(string[] args)
-        {
-            string apiPath =
-                @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\API-ServiceAgreements\Azure2\";
-            FileHandler fh = new FileHandler(apiPath);
-            
-            string data = fh.ReadFile();
-            fh.HandleJson(data);
-            
-            Console.WriteLine("Hello World!");
-            
-        }
     }
 }
