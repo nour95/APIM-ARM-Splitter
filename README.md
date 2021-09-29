@@ -4,7 +4,9 @@
 - C# 7
 
 You may also need to install the following package to make this project work in your IDE:
-- Newtonsoft.Json (can be installed with NuGet)
+- `Newtonsoft.Json` (can be installed with NuGet)
+- ``YamlDotNet`` (can also be installed with NuGet or t.ex. by ``dotnet add package YamlDotNet``)
+
 
 
 - The template file (Template.json need to be copied to debug). This can be done be changing the properties of the Template.json and then choose 'Copy if newer' option 
@@ -28,7 +30,7 @@ You may also need to install the following package to make this project work in 
 # TODOs:
 - have a check to empty or null values
 - need to remove the dependencies in the splited files --> **done**
-- add variabls to AI
+- add variabls to AI --> **skipped**
 - Create a class that return only the not added resources, for schemas and operations (and probably for AI)
 
 

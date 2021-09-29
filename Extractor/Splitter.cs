@@ -9,12 +9,10 @@ namespace Extractor
 {
     public class Splitter
     {
-        // private readonly string _destinationFolderPath;
         private readonly string _templateFilePath;
 
-        public Splitter(string destinationFolderPath)
+        public Splitter()
         {
-            // this._destinationFolderPath = destinationFolderPath;
             this._templateFilePath = @"Template.json";
             
             if (!File.Exists(this._templateFilePath))
@@ -24,83 +22,173 @@ namespace Extractor
 
         }
 
-
-
-
-        // need APIM_name only
-        public JObject GetTheApi(List<dynamic> resourcesList)
+         public Dictionary<ResourceTypes, JObject> SplitJson(string dataString)
         {
-            // const string fileName = "api-template.json";
-            string[] paramArr = new string[] { "ApimServiceName" };
+            JObject data = JObject.Parse(dataString);
+            // string parametersString =  "";
 
-            return Move(paramArr, resourcesList);
+            List<dynamic> theApi = new List<dynamic>();
+            List<dynamic> operations = new List<dynamic>();
+            List<dynamic> diagnostics = new List<dynamic>();
+            List<dynamic> schemas = new List<dynamic>();
+            
+            List<dynamic> products = new List<dynamic>();
+            List<dynamic> otherThings = new List<dynamic>();
+
+
+            foreach (dynamic resource in data["resources"]) {
+                switch (resource["type"].ToString())
+                {
+                    //The Api (api & api policy):
+                    case "Microsoft.ApiManagement/service/apis":  // leave the dependencies
+                        theApi.Add(resource);
+                        break;
+                    case "Microsoft.ApiManagement/service/apis/policies": // leave the dependencies
+                        theApi.Add(resource);
+                        break;
+                    
+                    // The schema:
+                    case "Microsoft.ApiManagement/service/apis/schemas":
+                        resource["dependsOn"] = new JArray(); // remove the dependencies
+                        schemas.Add(resource);
+                        break;
+                    
+                    // The operations (& their operations):
+                    case "Microsoft.ApiManagement/service/apis/operations":
+                        resource["dependsOn"] = new JArray(); // remove the dependencies
+                        operations.Add(resource);
+                        break;
+                    
+                    case "Microsoft.ApiManagement/service/apis/operations/policies":
+                        dynamic res = FixOperationPolicyDependencies(resource); // FIX the dependencies
+                        operations.Add(res);
+                        break;
+                    
+                    // The diagnostics:
+                    case string s when s.Contains("diagnostics"):
+                        resource["dependsOn"] = new JArray();
+                        diagnostics.Add(resource);
+                        break;
+                    
+                    // The products:
+                    case string s when s.Contains("products"):
+                        resource["dependsOn"] = new JArray();
+                        products.Add(resource);
+                        break;
+                    // Other stuff:
+                    default:
+                        otherThings.Add(resource);
+                        break;
+
+                }
+                
+                
+                Console.WriteLine(resource.type);
+            }
+            
+            Dictionary<ResourceTypes, JObject> allResources = new Dictionary<ResourceTypes, JObject>();
+
+            
+            allResources.Add(ResourceTypes.Api, GetTheApi(theApi)); // Get the API ('service/apis' + 'service/apis/policy')
+            allResources.Add(ResourceTypes.Operations, GetOperations(operations));
+            allResources.Add(ResourceTypes.Logger, GetDiagnostic(diagnostics));
+            allResources.Add(ResourceTypes.Schemas, GetSchemas(schemas));
+            
+            allResources.Add(ResourceTypes.Products, GetProducts(products));
+            allResources.Add(ResourceTypes.Others, GetOtherThings(otherThings));
+            
+            Console.WriteLine("done splitting JSON");
+
+            return allResources;
+        }
+
+
+          
+         private JObject GetResource(string[] paramArr , List<dynamic> resourcesList)
+         {
+             JObject result = new JObject();
+
+             // Read the template file
+             dynamic template = JObject.Parse(File.ReadAllText(this._templateFilePath));
+
+             // add $schema and contentVersion to result  
+             result.Add("$schema", template["$schema"]);
+             result.Add("contentVersion", template.contentVersion);
+            
+             // create and add the parameters
+             JObject parameters = CreateParameters(template, paramArr);
+             result.Add("parameters", parameters);
+
+
+             // Add the resources 
+             JArray resources = new JArray(resourcesList);
+             result.Add("resources", resources);
+            
+             return result;
+            
+
+         }
+
+
+
+        // The get functions
+        private JObject GetTheApi(List<dynamic> resourcesList)
+        {
+            string[] paramArr = new string[] {"ApimServiceName"};
+            return GetResource(paramArr, resourcesList);
         }
         
-        public JObject GetOperations(List<object> resourcesList)
+        private JObject GetOperations(List<object> resourcesList)
         {
-            // const string fileName = "operations-template.json";
             string[] paramArr = new string[] { "ApimServiceName", "LAs_general_info" };
-
-            return Move(paramArr, resourcesList);
+            return GetResource(paramArr, resourcesList);
         }
-        public JObject GetDiagnostic(List<object> resourcesList) 
+        
+        private JObject GetDiagnostic(List<object> resourcesList) 
         {
-            // const string fileName = "logger-template.json";
             string[] paramArr = new string[] { "ApimServiceName", "applicationInsight" };
-
-            return Move(paramArr, resourcesList);        
+            return GetResource(paramArr, resourcesList);        
         }
-        public JObject GetSchemas(List<object> resourcesList)
+        
+        private JObject GetSchemas(List<object> resourcesList)
         {
-            // const string fileName = "schemas-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
-
-            return Move(paramArr, resourcesList);
+            return GetResource(paramArr, resourcesList);
         }
         
-        public JObject GetProducts(List<object> resourcesList)
+        private JObject GetProducts(List<object> resourcesList)
         {
-            // const string fileName = "products-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
-
-            return Move(paramArr, resourcesList);
+            return GetResource(paramArr, resourcesList);
         }
-        public JObject GetOtherThings(List<object> resourcesList)
+        
+        private JObject GetOtherThings(List<object> resourcesList)
         {
-            // const string fileName = "others-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
-
-            return Move(paramArr, resourcesList);
+            return GetResource(paramArr, resourcesList);
         }
         
-        
-        public JObject Move(string[] paramArr , List<dynamic> resourcesList)
-        {
-            JObject result = new JObject();
-
-            // Read the template file
-            dynamic template = JObject.Parse(File.ReadAllText(this._templateFilePath));
-
-            // add $schema and contentVersion to result  
-            result.Add("$schema", template["$schema"]);
-            result.Add("contentVersion", template.contentVersion);
-            
-            // create and add the parameters
-            JObject parameters = CreateParameters(template, paramArr);
-            result.Add("parameters", parameters);
-
-
-            // Add the resources 
-            JArray resources = new JArray(resourcesList);
-            result.Add("resources", resources);
-            
-            return result;
-            
-
-        }
-
-        
+       
+        //-------------------------------------------
         // Helper methods:
+        //-------------------------------------------
+
+        private JObject FixOperationPolicyDependencies(dynamic resource)
+        {
+            JArray originalDependencies = resource["dependsOn"];
+            JArray newDependencies = new JArray();
+            
+            foreach (dynamic dependency in originalDependencies)
+            {
+                string dependencyValue = (string) dependency.Value;
+                if (dependencyValue.StartsWith("[resourceId('Microsoft.ApiManagement/service/apis/operations', parameters('ApimServiceName'),"))
+                    newDependencies.Add(dependency);
+            }
+
+            resource["dependsOn"] = newDependencies; // Reset the dependencies
+            return resource;
+        }
+        
         private JObject CreateParameters(dynamic template, string[] paramArr)
         {
             JObject parameters = new JObject();
