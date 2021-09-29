@@ -7,14 +7,14 @@ using System.IO;
 
 namespace Extractor
 {
-    public class Mover
+    public class Splitter
     {
-        private readonly string _destinationFolderPath;
+        // private readonly string _destinationFolderPath;
         private readonly string _templateFilePath;
 
-        public Mover(string destinationFolderPath)
+        public Splitter(string destinationFolderPath)
         {
-            this._destinationFolderPath = destinationFolderPath;
+            // this._destinationFolderPath = destinationFolderPath;
             this._templateFilePath = @"Template.json";
             
             if (!File.Exists(this._templateFilePath))
@@ -28,50 +28,53 @@ namespace Extractor
 
 
         // need APIM_name only
-        public void MoveTheApi(List<dynamic> resourcesList)
+        public JObject GetTheApi(List<dynamic> resourcesList)
         {
-            const string fileName = "api-template.json";
+            // const string fileName = "api-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
 
-            Move(fileName, paramArr, resourcesList);
+            return Move(paramArr, resourcesList);
         }
         
-        public void MoveOperations(List<object> resourcesList)
+        public JObject GetOperations(List<object> resourcesList)
         {
-            const string fileName = "operations-template.json";
+            // const string fileName = "operations-template.json";
             string[] paramArr = new string[] { "ApimServiceName", "LAs_general_info" };
 
-            Move(fileName, paramArr, resourcesList);
+            return Move(paramArr, resourcesList);
         }
-        public void MoveDiagnostic(List<object> resourcesList) //TODO  need to have variables
+        public JObject GetDiagnostic(List<object> resourcesList) 
         {
-            Console.WriteLine("In diagnostics Handler");
+            // const string fileName = "logger-template.json";
+            string[] paramArr = new string[] { "ApimServiceName", "applicationInsight" };
+
+            return Move(paramArr, resourcesList);        
         }
-        public void MoveSchemas(List<object> resourcesList)
+        public JObject GetSchemas(List<object> resourcesList)
         {
-            const string fileName = "schemas-template.json";
+            // const string fileName = "schemas-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
 
-            Move(fileName, paramArr, resourcesList);
+            return Move(paramArr, resourcesList);
         }
         
-        public void MoveProducts(List<object> resourcesList)
+        public JObject GetProducts(List<object> resourcesList)
         {
-            const string fileName = "products-template.json";
+            // const string fileName = "products-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
 
-            Move(fileName, paramArr, resourcesList);
+            return Move(paramArr, resourcesList);
         }
-        public void MoveOtherThings(List<object> resourcesList)
+        public JObject GetOtherThings(List<object> resourcesList)
         {
-            const string fileName = "others-template.json";
+            // const string fileName = "others-template.json";
             string[] paramArr = new string[] { "ApimServiceName" };
 
-            Move(fileName, paramArr, resourcesList);
+            return Move(paramArr, resourcesList);
         }
         
         
-        public void Move(string fileName, string[] paramArr , List<dynamic> resourcesList)
+        public JObject Move(string[] paramArr , List<dynamic> resourcesList)
         {
             JObject result = new JObject();
 
@@ -91,21 +94,13 @@ namespace Extractor
             JArray resources = new JArray(resourcesList);
             result.Add("resources", resources);
             
-            // Add the content to a file
-            string resultToFile = JsonConvert.SerializeObject(result);
-            File.WriteAllText(@$"{_destinationFolderPath}/{fileName}", resultToFile, Encoding.UTF8);
+            return result;
             
 
         }
 
         
         // Helper methods:
-        private void AddEssentials(dynamic template, JObject result)
-        {
-            
-        }
-        
-        
         private JObject CreateParameters(dynamic template, string[] paramArr)
         {
             JObject parameters = new JObject();

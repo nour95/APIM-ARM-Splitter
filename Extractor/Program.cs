@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.IO.Pipes;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -10,13 +11,22 @@ namespace Extractor
 {
     class FileHandler
     {
-        private readonly string _sourcePath;        
-        private Mover mover;
+        private readonly string _sourcePath;
+        private readonly string _destinationFolderPath;
+
+        private Dictionary<string, JObject> allResources;
+        
+        private Splitter splitter;
+        
+        // private JObject theApi
 
         public FileHandler(string apiFileSourcePath, string destinationPath)
         {
             this._sourcePath = apiFileSourcePath;
-            this.mover = new Mover(destinationPath);
+            this._destinationFolderPath = destinationPath;
+            
+            this.splitter = new Splitter(destinationPath);
+            allResources = new Dictionary<string, JObject>();
         }
 
 
@@ -31,12 +41,11 @@ namespace Extractor
 
             // Open the file to read from.
             string readText = File.ReadAllText(fileName);
-
-
+            
             return readText;
         }
 
-        public void HandleJson(string dataString)
+        public void SplitJson(string dataString)
         {
             JObject data = JObject.Parse(dataString);
             // string parametersString =  "";
@@ -100,30 +109,29 @@ namespace Extractor
                 Console.WriteLine(resource.type);
             }
             
-            // Move the API ('service/apis' + 'service/apis/policy')
-            mover.MoveTheApi(theApi);
-            // Move the diagnostics to another file
-            mover.MoveDiagnostic(diagnostics);
-            // Move the operations and their policies to another file
-            mover.MoveOperations(operations);
-            //Move the schemas
-            mover.MoveSchemas(schemas);
+            allResources.Add("api", splitter.GetTheApi(theApi)); // Get the API ('service/apis' + 'service/apis/policy')
+            allResources.Add("operations", splitter.GetOperations(operations));
+            allResources.Add("logger", splitter.GetDiagnostic(diagnostics));
+            allResources.Add("schemas", splitter.GetSchemas(schemas));
             
-            //Move the schemas
-            mover.MoveProducts(products);
-            //Move the schemas
-            mover.MoveOtherThings(otherThings);
+            allResources.Add("products", splitter.GetProducts(products));
+            allResources.Add("others", splitter.GetOtherThings(otherThings));
             
-            // Move all other things to another file
+            Console.WriteLine("done splitting JSON");
+
+        }
+
+
+        public void PrintAllFiles()
+        { 
+            // Add the content to a file
+            foreach(var resource in allResources)
+            {
+                string resultToFile = JsonConvert.SerializeObject(resource.Value);
+                File.WriteAllText(@$"{_destinationFolderPath}/{resource.Key}-template.json", resultToFile, Encoding.UTF8);
+            }
             
-            // maybe also add a replacer that replace add concat to the policies
-            // maybe also add a replace that replace all LA parameters to something that use LA_general_info
-
-
-
-
-            Console.WriteLine("done reading JSON");
-
+            
         }
 
         private JObject FixOperationPolicyDependencies(dynamic resource)

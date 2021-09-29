@@ -24,10 +24,14 @@
     "environment": {
       "type": "string",
       "defaultValue": "dev"
+    },
+    "applicationInsight": {
+      "type": "string",
+      "defaultValue": "shared-applicationinsights-apim-"
     }
   },
   "variables": {
-        "applicationInsight": "[concat('shared-applicationinsights-', parameters('environment'))]"
+        "": "[concat('shared-applicationinsights-apim-', parameters('environment'))]"
   }, 
   "resources": []
   
