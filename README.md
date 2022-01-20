@@ -32,6 +32,7 @@ You may also need to install the following package to make this project work in 
 - need to remove the dependencies in the splited files --> **done**
 - add variabls to AI --> **skipped**
 - Create a class that return only the not added resources, for schemas and operations (and probably for AI)
+- May do a similar idea that extract logic app.
 
 
 

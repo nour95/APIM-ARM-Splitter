@@ -14,21 +14,17 @@ namespace Extractor
 {
     class FileHandler
     {
-        private readonly string _sourcePath;
-        private readonly string _destinationFolderPath;
         
 
-        public FileHandler(string apiFileSourcePath, string destinationPath)
+        public FileHandler()
         {
-            this._sourcePath = apiFileSourcePath;
-            this._destinationFolderPath = destinationPath;
         }
 
 
 
-        public string ReadApiJsonFile()
+        public string ReadFileAsString(string sourcePath)
         {
-            string fileName = $"{_sourcePath}";
+            string fileName = $"{sourcePath}";
             if (!File.Exists(fileName))
             {
                 throw new FileNotFoundException($"The file {fileName} doesn't exist");
@@ -36,7 +32,7 @@ namespace Extractor
 
             // Open the file to read from.
             string readText = File.ReadAllText(fileName);
-            
+
             return readText;
         }
 
@@ -89,13 +85,13 @@ namespace Extractor
         }
 
 
-        public void PrintAllFiles(Dictionary<ResourceTypes, JObject> allResources)
+        public void PrintAllFiles(Dictionary<ResourceTypes, JObject> allResources, string destinationFolderPath)
         { 
             // Add the content to a file
             foreach(var resource in allResources)
             {
                 string resultToFile = JsonConvert.SerializeObject(resource.Value, Formatting.Indented);
-                File.WriteAllText(@$"{_destinationFolderPath}/{resource.Key.ToString().ToLower()}-template.json", resultToFile, Encoding.UTF8);
+                File.WriteAllText(@$"{destinationFolderPath}/{resource.Key.ToString().ToLower()}-template.json", resultToFile, Encoding.UTF8);
 
                 
             }

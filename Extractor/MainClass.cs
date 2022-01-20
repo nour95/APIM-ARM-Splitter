@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace Extractor
@@ -8,37 +9,60 @@ namespace Extractor
     {
         
         private Dictionary<ResourceTypes, JObject> _allResources;
+        private JObject _replacementData ;
 
         private readonly FileHandler _fh;
         private readonly Splitter _splitter;
-        private readonly Replacer _replacer;
+        private Replacer replacer;
+
+        //TODO find a solution to them later
+        private readonly string _apiSourceFilePath;
+        private readonly string _destinationFolderPath;
+        private readonly string _replacementFilePath;
 
 
-        public MainClass(string sourcePath, string destinationFolderPath, string yamlFile)
+        public MainClass(string apiSourceFilePath, string destinationFolderPath, string replacementFilePath)
         {
             this._allResources = new Dictionary<ResourceTypes, JObject>();
 
-            this._fh = new FileHandler(sourcePath, destinationFolderPath);
-            
-            _fh.ReadYamlFile(yamlFile);
-            
+            this._fh = new FileHandler();
             this._splitter = new Splitter();
-            this._replacer = new Replacer();
+            
+            // --- 
+            this._apiSourceFilePath = apiSourceFilePath;
+            this._destinationFolderPath = destinationFolderPath;
+            this._replacementFilePath = replacementFilePath;
+
+            
         }
 
         public void Run()
         {
             
-            string data = _fh.ReadApiJsonFile();
-            _allResources = _splitter.SplitJson(data);
+            string apiData = _fh.ReadFileAsString(_apiSourceFilePath);
+            _allResources = _splitter.SplitJson(apiData);
+
             
-            JObject improvedLogger = _replacer.ReplaceInLoggerFile(_allResources[ResourceTypes.Logger]);
-            JObject improvedOperations = _replacer.ReplaceInTheOperations(_allResources[ResourceTypes.Operations]);
+            // replacer:
+            
+            string replacementDataString = _fh.ReadFileAsString(_replacementFilePath);
+            _replacementData = JObject.Parse(replacementDataString);
+            replacer = new Replacer(_replacementData);
+
+            
+            JObject improvedLogger = replacer.ReplaceInLoggerFile(_allResources[ResourceTypes.Logger]);
+            // JObject improvedOperations = replacer.ReplaceInTheOperations(_allResources[ResourceTypes.Operations]);
+            replacer.getPolicybyOperationName(_allResources[ResourceTypes.Operations], "budgets");
 
             _allResources[ResourceTypes.Logger] = improvedLogger;
-            _allResources[ResourceTypes.Operations] = improvedOperations;
+            // _allResources[ResourceTypes.Operations] = improvedOperations;
 
-            _fh.PrintAllFiles(_allResources);
+            
+            
+            
+            
+            // replacement is done
+            _fh.PrintAllFiles(_allResources, _destinationFolderPath);
             
             Console.WriteLine("Hello World!");
         }
@@ -46,18 +70,68 @@ namespace Extractor
 
         private static void Main(string[] args)
         {
+            //TODO make one path that point to the folder only
+            string apiSourceFile =
+                @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\MyTest\Azure2\gk-api-dev-serviceagreements-api.template.json";
+            string destinationPath = @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\MyTest\Azure3";
             
-            string sourceFile =
-                @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\API-ServiceAgreements\Azure2\gk-api-dev-serviceagreements-api.template.json";
-            string destinationPath = @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\API-ServiceAgreements\Azure3";
-
-            string yamlFile = @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\API-ServiceAgreements\azure-pipelines.yml";
+            string replacementFile = @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\MyTest\yamlParameters.json";
             
-            MainClass mc = new MainClass(sourceFile, destinationPath, yamlFile);
-
+            // string yamlFile = @"C:\Users\NourAl-HudaAl-Majni\Desktop\nour\ibiz\GK\gitReopos\APIs\MyTest\azure-pipelines.yml";
+            
+            MainClass mc = new MainClass(apiSourceFile, destinationPath, replacementFile );
+            
             mc.Run();
+            
+            
+            
+            string operationName = "budgets";
+            // string pattern = @"^\[concat\(parameters\('ApimServiceName'\), '/[a-zA-z0-9]/x12/policy/\]$";
+            string pattern = @"^\[concat\(parameters\(\'ApimServiceName\'\), \'/([A-Za-z0-9-])+/" + operationName + @"/policy\'\)\]$";
+            
+            // string input = "[concat(parameters('ApimServiceName'), '/serviceagreements/x12/policy')]";
+            // string input = "[concat(parameters('ApimServiceName'), '/nour-v1/x12/policy')]";
+            string input = "[concat(parameters('ApimServiceName'), '/serviceagreements/budgets/policy')]";
+            
+            bool x = Regex.IsMatch(input, pattern);
+            
+            
+            
+            Console.WriteLine(x);
+
 
 
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
