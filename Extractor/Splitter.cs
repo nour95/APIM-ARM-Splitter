@@ -22,21 +22,21 @@ namespace Extractor
 
         }
 
-         public Dictionary<ResourceTypes, JObject> SplitJson(string dataString)
+         public Dictionary<ResourceTypes, List<JObject>> SplitJson(string dataString)
         {
             JObject data = JObject.Parse(dataString);
             // string parametersString =  "";
 
-            List<dynamic> theApi = new List<dynamic>();
-            List<dynamic> operations = new List<dynamic>();
-            List<dynamic> diagnostics = new List<dynamic>();
-            List<dynamic> schemas = new List<dynamic>();
+            List<JObject> theApi = new List<JObject>();
+            List<JObject> operations = new List<JObject>();
+            List<JObject> diagnostics = new List<JObject>();
+            List<JObject> schemas = new List<JObject>();
             
-            List<dynamic> products = new List<dynamic>();
-            List<dynamic> otherThings = new List<dynamic>();
+            List<JObject> products = new List<JObject>();
+            List<JObject> otherThings = new List<JObject>();
 
 
-            foreach (dynamic resource in data["resources"]) {
+            foreach (JObject resource in data["resources"]) {
                 switch (resource["type"].ToString())
                 {
                     //The Api (api & api policy):
@@ -83,19 +83,19 @@ namespace Extractor
                 }
                 
                 
-                Console.WriteLine(resource.type);
+                Console.WriteLine(resource["type"]);
             }
             
-            Dictionary<ResourceTypes, JObject> allResources = new Dictionary<ResourceTypes, JObject>();
+            Dictionary<ResourceTypes, List<JObject>> allResources = new Dictionary<ResourceTypes, List<JObject>>();
 
+
+            allResources.Add(ResourceTypes.Api, theApi);//GetTheApi(theApi)); // Get the API ('service/apis' + 'service/apis/policy')
+            allResources.Add(ResourceTypes.Operations, operations); //GetOperations(operations));
+            allResources.Add(ResourceTypes.Logger, diagnostics); //GGetDiagnostic(diagnostics));
+            allResources.Add(ResourceTypes.Schemas, schemas); //GGetSchemas(schemas));
             
-            allResources.Add(ResourceTypes.Api, GetTheApi(theApi)); // Get the API ('service/apis' + 'service/apis/policy')
-            allResources.Add(ResourceTypes.Operations, GetOperations(operations));
-            allResources.Add(ResourceTypes.Logger, GetDiagnostic(diagnostics));
-            allResources.Add(ResourceTypes.Schemas, GetSchemas(schemas));
-            
-            allResources.Add(ResourceTypes.Products, GetProducts(products));
-            allResources.Add(ResourceTypes.Others, GetOtherThings(otherThings));
+            allResources.Add(ResourceTypes.Products, products); //GGetProducts(products));
+            allResources.Add(ResourceTypes.Others, otherThings); //GGetOtherThings(otherThings));
             
             Console.WriteLine("done splitting JSON");
 

@@ -85,11 +85,28 @@ namespace Extractor
         }
 
 
-        public void PrintAllFiles(Dictionary<ResourceTypes, JObject> allResources, string destinationFolderPath)
+        public void PrintJsonInFile(List<JObject> resourcesToPrint, string destinationFolderPath, string fileName)
+        { 
+            // Add the content to a file
+            StringBuilder sb = new StringBuilder();
+            foreach(var resource in resourcesToPrint)
+            {
+                string resultToFile = JsonConvert.SerializeObject(resource, Formatting.Indented);
+                sb.Append(resultToFile).Append(",\n\n");
+            }
+            
+            File.WriteAllText(@$"{destinationFolderPath}/{fileName.ToLower()}-template.json", sb.ToString(), Encoding.UTF8);
+
+            
+            
+        }
+        
+        public void PrintAllFiles(Dictionary<ResourceTypes, List<JObject>> allResources, string destinationFolderPath)
         { 
             // Add the content to a file
             foreach(var resource in allResources)
             {
+                //todo  need to fix this printingList may use JArray instead of lists??
                 string resultToFile = JsonConvert.SerializeObject(resource.Value, Formatting.Indented);
                 File.WriteAllText(@$"{destinationFolderPath}/{resource.Key.ToString().ToLower()}-template.json", resultToFile, Encoding.UTF8);
 
