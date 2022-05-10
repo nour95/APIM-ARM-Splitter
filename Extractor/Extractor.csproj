@@ -11,10 +11,4 @@
       <PackageReference Include="JsonDiffPatch.Net" Version="2.3.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="Template.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
 </Project>

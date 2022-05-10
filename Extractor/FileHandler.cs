@@ -15,8 +15,14 @@ namespace Extractor
     class FileHandler
     {
         public FileHandler() { }
+
+
+        public static string[] GetNameOfAllFilesInDirectory(string directoryName)
+        {
+            return Directory.GetFiles(directoryName);
+        }
         
-        public string ReadFileAsString(string sourcePath)
+        public static string ReadFileAsString(string sourcePath)
         {
             string fileName = $"{sourcePath}";
             if (!File.Exists(fileName))
@@ -29,56 +35,21 @@ namespace Extractor
 
             return readText;
         }
-
-        public void ReadYamlFile(string yamlFileName)
+        
+        public static void CopyFile(string sourceFileName, string destFolder, string destFileName, bool overwrite)
         {
-            string yamlContent = File.ReadAllText(yamlFileName);
-            string jsonString = ConvertYamlToJsonString(yamlFileName, yamlContent);
-
-            //TODO continue here 
-
-
-            Console.WriteLine("Hello from yaml reeader!");
+            // create the destination folder if not exist.
+            Directory.CreateDirectory(destFolder);
+            
+            string newFileName = Path.Combine(destFolder, destFileName);
+            File.Copy(sourceFileName, newFileName, overwrite);
         }
 
-        public string ConvertYamlToJsonString(string yamlFileName, string yamlContent)
+        public static void PrintJsonInFile(List<JObject> resourcesToPrint, string destFolder, string fileType)
         {
-            var deserializer = new DeserializerBuilder().Build();
-            var yamlObject = deserializer.Deserialize(new StringReader(yamlContent));
-
-            var serializer = new SerializerBuilder()
-                .JsonCompatible()
-                .Build();
-
-            if (yamlObject != null)
-                return serializer.Serialize(yamlObject);
-            else
-                throw new FileLoadException($"There are problems with reading the file {yamlFileName} as yaml ");
-        }
-
-        // seems un efficient
-        public void ReadYamlFile2(string yamlFile)
-        {
-            string readText = File.ReadAllText(yamlFile);
-
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .Build();
-
-            Dictionary<Object, Object> yaml =
-                (Dictionary<Object, Object>) deserializer.Deserialize(new StringReader(readText));
-
-            var la_general = ((Dictionary<Object, Object>) yaml["variables"])["LAs_general_info"];
-
-
-            Console.WriteLine("Hello from yaml reeader!");
-        }
-
-
-        public void PrintJsonInFile(List<JObject> resourcesToPrint, string destinationFolderPath, string fileName)
-        {
-            Directory.CreateDirectory(destinationFolderPath);
-            // Add the content to a file
+            Directory.CreateDirectory(destFolder);
+            
+            // Add the content to the file
             StringBuilder sb = new StringBuilder();
             foreach (var resource in resourcesToPrint)
             {
@@ -86,36 +57,20 @@ namespace Extractor
                 sb.Append(resultToFile).Append(",\n\n");
             }
 
-            File.WriteAllText(@$"{destinationFolderPath}/{fileName.ToLower()}-template.json", sb.ToString(),
+            File.WriteAllText(@$"{destFolder}/{fileType.ToLower()}.json", sb.ToString(),
                 Encoding.UTF8);
         }
 
-        public void PrintAllFiles(Dictionary<ResourceTypes, List<JObject>> allResources, string destinationFolderPath)
-        {
-            // Add the content to a file
-            foreach (var resource in allResources)
-            {
-                //todo  need to fix this printingList may use JArray instead of lists??
-                string resultToFile = JsonConvert.SerializeObject(resource.Value, Formatting.Indented);
-                File.WriteAllText(@$"{destinationFolderPath}/{resource.Key.ToString().ToLower()}-template.json",
-                    resultToFile, Encoding.UTF8);
-            }
-        }
 
-
-        public void PrintInnerDifferencesInFile(List<Operations> AllOperations, string destinationFolder,
-            string fileName)
+        public static void PrintInnerDifferencesInFile(List<Operations> allOperations, string destFolder,
+            string fileType)
         {
-            Directory.CreateDirectory(destinationFolder);
+            Directory.CreateDirectory(destFolder);
             // Add the content to a file
             StringBuilder sb = new StringBuilder();
-            foreach (var element in AllOperations)
+            foreach (var element in allOperations)
             {
-                // sb.Append($"\"In the new resource with name: {element.Name} and type: {element.Type}, " +
-                          // $"you have the following changes: \"");
-                // sb.Append('\n');
-                          
-                          
+                
                 string operationsList = JsonConvert.SerializeObject(element, Formatting.Indented);
                 sb.Append(operationsList)
                     .Append('\n')
@@ -123,8 +78,10 @@ namespace Extractor
                     .Append("\n\n");
             }
 
-            File.WriteAllText(@$"{destinationFolder}/{fileName.ToLower()}-template.json", sb.ToString(),
+            File.WriteAllText(@$"{destFolder}/{fileType.ToLower()}.json", sb.ToString(),
                 Encoding.UTF8);
         }
+
+        
     }
 }
