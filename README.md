@@ -5,34 +5,26 @@
 
 You may also need to install the following package to make this project work in your IDE:
 - `Newtonsoft.Json` (can be installed with NuGet)
-- ``YamlDotNet`` (can also be installed with NuGet or t.ex. by ``dotnet add package YamlDotNet``)
+
+
+# What will this extractor do:
+- Compare a ARM for one API inside APIM with another ARM template for same API. e.g. an old copy of ARM with a newer one. 
+- Find out which new resources has been add in the 'newer' (second) ARM template. ---> found under folder `newResources`
+- Find out if there is any other small differences between any resource in first ARM with the corresponding resource in the second ARM. ---> found under folder `innerDifferences`
 
 
 
-- The template file (Template.json need to be copied to debug). This can be done be changing the properties of the Template.json and then choose 'Copy if newer' option 
+[comment]: <> (# TODOs:)
 
-# What will this extractor/cleaner do:
-- Move the API itself to another file
-- Move the diagnostics to another file
-- Move the operations and their policies to another file
-- Move all other things to another file
+[comment]: <> (- have a check to empty or null values)
 
+[comment]: <> (- need to remove the dependencies in the splited files --> **done**)
 
-- Maybe also extract only the requested operation to another file to make copy and paste easier
+[comment]: <> (- add variabls to AI --> **skipped**)
 
+[comment]: <> (- Create a class that return only the not added resources, for schemas and operations &#40;and probably for AI&#41;)
 
-- Maybe also add a replacer that replace add concat to the policies
-- Maybe also add a replace that replace all LA parameters to something that use LA_general_info
-
-
-
-
-# TODOs:
-- have a check to empty or null values
-- need to remove the dependencies in the splited files --> **done**
-- add variabls to AI --> **skipped**
-- Create a class that return only the not added resources, for schemas and operations (and probably for AI)
-- May do a similar idea that extract logic app.
+[comment]: <> (- May do a similar idea that extract logic app.)
 
 
 
