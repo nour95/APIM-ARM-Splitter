@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using JsonDiffPatchDotNet;
 using JsonDiffPatchDotNet.Formatters.JsonPatch;
 using Newtonsoft.Json;
@@ -8,6 +10,10 @@ namespace Extractor
 {
     public class Comparator
     {
+        private readonly JsonDiffPatch _jdp = new JsonDiffPatch();
+        private readonly JsonDeltaFormatter _formatter = new JsonDeltaFormatter();
+
+
         /// <summary>
         /// Will compare the new file with old files. Return an object of class summery that
         /// include 4 types of lists.
@@ -35,6 +41,8 @@ namespace Extractor
             // i.e. the resource exist in both new and old file but they have some differences
             List<Operations> innerDifferences = new List<Operations>();
 
+            int taskDiffErrorCounter = 0;
+
             // Go through all resources in the nre file
             foreach (JObject resourceInNew in newFile["resources"])
             {
@@ -58,7 +66,7 @@ namespace Extractor
                         matched.Add(resourceInNew);
 
                         // now try to find the inner differences between 2 resources
-                        List<OneOperation> comparedResult = compareContents(resourceInOld, resourceInNew);
+                        List<OneOperation> comparedResult = CompareContents(resourceInOld, resourceInNew);
                         
                         // if there is at least one difference then add this difference ti innerDifference list
                         if (comparedResult != null && comparedResult.Count >= 1)
@@ -66,6 +74,9 @@ namespace Extractor
                             Operations operationsList = new Operations(newResourceName, newResourceType, comparedResult,
                                 resourceInNew, resourceInOld);
                             innerDifferences.Add(operationsList);
+
+                            if (operationsList.OperationsList[0].Op == "TextDiff") taskDiffErrorCounter++;
+                            
                         }
 
                         break;
@@ -77,7 +88,7 @@ namespace Extractor
                     unMatched.Add(resourceInNew);
             }
             
-            return new Summery(all, matched, unMatched, innerDifferences);
+            return new Summery(all, matched, unMatched, innerDifferences, taskDiffErrorCounter);
 
 
 
@@ -90,21 +101,39 @@ namespace Extractor
         /// <param name="resourceInNew"></param>
         /// <returns>Return a list of all different operations between the 2 resources like add,
         /// remove, replace.</returns>
-        private List<OneOperation> compareContents(JObject resourceInOld, JObject resourceInNew)
+        private List<OneOperation> CompareContents(JObject resourceInOld, JObject resourceInNew)
         {
-            var jdp = new JsonDiffPatch();
+            JToken patch = _jdp.Diff(resourceInOld, resourceInNew);
+            try
+            {
+                // var output = _jdp.Patch(resourceInNew, patch);
+                var operations = _formatter.Format(patch);
 
-            JToken patch = jdp.Diff(resourceInOld, resourceInNew);
-            // var output = jdp.Patch(resourceInNew, patch);
-            var formatter = new JsonDeltaFormatter();
-            var operations = formatter.Format(patch);
-            
-            // convert the library (JsonDiffPatch) own operation class to my own operation class to have
-            // a better control of the results
-            var operationString = JsonConvert.SerializeObject(operations,Formatting.Indented);
-            var operationsList = JsonConvert.DeserializeObject<List<OneOperation>>(operationString);
-            
-            return operationsList;
+                // convert the library (JsonDiffPatch) own operation class to my own operation class to have
+                // a better control of the results
+                var operationString = JsonConvert.SerializeObject(operations, Formatting.Indented);
+                var operationsList = JsonConvert.DeserializeObject<List<OneOperation>>(operationString);
+
+                return operationsList;
+            }
+            catch (InvalidOperationException exp)
+            {
+                //todo find a better solution to this:
+                var mayHaveHints = JsonConvert.SerializeObject(patch, Formatting.None);
+                OneOperation operation = new OneOperation()
+                {
+                    From = null,
+                    // I think that this what happen when there is more than one difference inside one
+                    // text and RFC don't support it so do the check manually instead
+                    Op = "TextDiff",
+                    Comment = "(you can find some hint to this type of operations under the value field)",
+                    Path = "unKnown",
+                    Value = mayHaveHints
+                                    
+                };
+                //Console.WriteLine("Error happen when finding the inner difference ");
+                return new List<OneOperation> {operation};;
+            }
         }
 
         

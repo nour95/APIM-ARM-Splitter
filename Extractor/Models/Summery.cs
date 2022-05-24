@@ -12,12 +12,15 @@ namespace Extractor
 
         public List<Operations> InnerDifferences { get; set; }
 
-        public Summery(List<JObject> all, List<JObject> matched, List<JObject> unMatched, List<Operations> innerDifferences)
+        public int TaskDiffErrorCounter { get; set; }
+
+        public Summery(List<JObject> all, List<JObject> matched, List<JObject> unMatched, List<Operations> innerDifferences, int taskDiffErrorCounter)
         {
             All = all;
             Matched = matched;
             UnMatched = unMatched;
             InnerDifferences = innerDifferences;
+            TaskDiffErrorCounter = taskDiffErrorCounter;
         }
     }
 }

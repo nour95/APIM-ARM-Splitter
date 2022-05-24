@@ -22,92 +22,84 @@ namespace Extractor
         private readonly Splitter _splitter;
         private readonly Comparator _comparator;
 
-        //TODO find a solution to them later
-        private readonly string srcFolder;
-        private readonly string destFolder;
-        private readonly string oldSourceFolder;
 
 
-        public MainClass(string srcFolder, string destFolder, string oldSourceFolder)
+        public MainClass()
         {
             // this._allResources = new Dictionary<ResourceTypes, List<JObject>>();
 
             this._fh = new FileHandler();
             this._splitter = new Splitter();
             this._comparator = new Comparator();
-
-            this.srcFolder = srcFolder;
-            this.destFolder = destFolder;
-            this.oldSourceFolder = oldSourceFolder;
         }
 
         private static void Main(string[] args)
         {
             //TODO make one path that point to the folder only
-            string sourceFolder = Path.Combine(mainPath, "Nour", "d365");
-            string destinationFolder = Path.Combine(mainPath, "Nour", "results");
+            // string sourceFolder = Path.Combine(mainPath, "Nour", "d365");
+            // string destinationFolder = Path.Combine(mainPath, "Nour", "results");
+            //
+            // string oldSourceFolder = Path.Combine(mainPath, "APIM", "D365");
 
-            string oldSourceFolder = Path.Combine(mainPath, "APIM", "D365");
-
-            MainClass mc = new MainClass(sourceFolder, destinationFolder, oldSourceFolder);
+            MainClass mc = new MainClass();
 
             mc.Run();
         }
 
         private void Run()
         {
-            Dictionary<string, JObject> oldFilesMap = _splitter.GetNeededTypesWithContents(oldSourceFolder);
+            Console.WriteLine("\n");
+            Console.WriteLine("Reading the files .....");
+            
+            Dictionary<string, JObject> oldFilesMap = _splitter.GetNeededTypesWithContents(Globals.OldSrcFolder);
             Dictionary<string, JObject> newFilesMap =
-                _splitter.GetNeededTypesWithContents(srcFolder, destFolder, true);
+                _splitter.GetNeededTypesWithContents(Globals.SrcFolder, Globals.DestFolder, true);
 
-            // foreach (var type in Globals.NeededTypes)
-            string type = Globals.NeededTypes[0];
+            //List<JObject> all; 
+            // List<JObject> matched;
+            // List<JObject> unMatched; 
+            // List<Operations> innerDiff;
+            
+            //string type = Globals.NeededTypes[3];
+            foreach (var type in Globals.NeededTypes)
             {
+                Console.WriteLine("-----------------------------------");
+                Console.WriteLine($"Compare the '{type}' files .....");
+
                 Summery s = _comparator.Compare(oldFilesMap[type], newFilesMap[type]);
 
-                // (_, _, var unMatched, var innerDiff) = (s.All, s.Matched, s.UnMatched, s.InnerDifferences);
-                (var unMatched, var innerDiff) = (s.UnMatched, s.InnerDifferences);
+                var (all, matched) = (s.All, s.Matched);
+                var (unMatched, innerDiff) = (s.UnMatched, s.InnerDifferences);
+                int taskDiffErrorCounter = s.TaskDiffErrorCounter;
                 
-                // ptiny the new resources and the inner differences
-                FileHandler.PrintJsonInFile(unMatched, Path.Join(destFolder, "newResources"), type);
-                FileHandler.PrintInnerDifferencesInFile(innerDiff, Path.Join(destFolder, "innerDifferences"), type);
+                //var (all, matched, unMatched, innerDiff ) = (s.All, s.Matched, s.UnMatched, s.InnerDifferences);
+
+                
+                // print the new resources and the inner differences
+                FileHandler.PrintJsonInFile(unMatched, Path.Join(Globals.DestFolder, "newResources"), type);
+                FileHandler.PrintInnerDifferencesInFile(innerDiff, Path.Join(Globals.DestFolder, "innerDifferences"), type);
+                
+                // Console.WriteLine("-----------------------------------");
+                // Console.WriteLine($"Done comparing the '{type}' files ");
+                Console.WriteLine("************************************");
+                Console.WriteLine($"Number of All new resources = '{all.Count}'");
+                Console.WriteLine($"Of them there are '{unMatched.Count}' completely new resources");
+                Console.WriteLine($"              and '{innerDiff.Count}' resources that have some inner differences");
+                Console.WriteLine($"[For debugging] The Number of resources that exist in both new and old file = '{matched.Count}'");
+                Console.WriteLine($"[For debugging] Through that the code has found '{taskDiffErrorCounter}' taskDiffErrors");
+                Console.WriteLine("************************************");
+
             }
 
             Console.WriteLine("-----------------------------------");
             Console.WriteLine("-----------------------------------");
             Console.WriteLine("Done Comparing and creating new files!");
-        }
-
-        
-        
-        
-        
-        private List<OneOperation> compareContents(JObject resourceInOld, JObject resourceInNew)
-        {
-            var jdp = new JsonDiffPatch();
-            try
-            {
-                JToken patch = jdp.Diff(resourceInOld, resourceInNew);
-                var output = jdp.Patch(resourceInNew, patch);
-                var formatter = new JsonDeltaFormatter();
-                var operations = formatter.Format(patch);
-                
-                var operationString = JsonConvert.SerializeObject(operations, Formatting.Indented);
-                var operationsList = JsonConvert.DeserializeObject<List<OneOperation>>(operationString);
-                
-                return operationsList;
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine( JsonConvert.SerializeObject(resourceInOld, Formatting.Indented));
-                Console.WriteLine("*-*-*-*-*-////*****/*--------");
-                Console.WriteLine( JsonConvert.SerializeObject(resourceInNew, Formatting.Indented));
-
-                throw;
-            }
-
             
+            // todo do something if there is no new resources
         }
+
+        
+        
+        
     }
 }

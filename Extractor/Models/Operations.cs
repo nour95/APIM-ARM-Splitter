@@ -49,6 +49,9 @@ namespace Extractor
 
         [JsonProperty("op")]
         public string Op { get; set; }
+        
+        [JsonProperty("comment", NullValueHandling = NullValueHandling.Ignore)]
+        public string Comment { get; set; }
 
         [JsonProperty("from", NullValueHandling = NullValueHandling.Ignore) ]
         public string From { get; set; }

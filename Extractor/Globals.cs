@@ -14,10 +14,10 @@ namespace Extractor
             "A1","gitRepos","shared","Shared.APIM");
         
         
-        string sourceFolder      = Path.Combine(MainPath, "Nour", "d365");
-        string destinationFolder = Path.Combine(MainPath, "Nour","results");
+        public static readonly string SrcFolder      = Path.Combine(MainPath, "Debug", "d365_2");
+        public static readonly string DestFolder = Path.Combine(MainPath, "Debug","results_2");
 
-        string oldSourceFolder   = Path.Combine(MainPath, "APIM","D365");
+        public static readonly string OldSrcFolder   = Path.Combine(MainPath, "APIM","D365");
         
         
         
