@@ -66,28 +66,62 @@ namespace Extractor
                 Console.WriteLine("-----------------------------------");
                 Console.WriteLine($"Compare the '{type}' files .....");
 
-                Summery s = _comparator.Compare(oldFilesMap[type], newFilesMap[type]);
+                var oldFileExist = oldFilesMap.TryGetValue(type, out JObject oldFileOutput);
+                var newFileExist = newFilesMap.TryGetValue(type, out JObject newFileOutput);
+                
+                if (!oldFileExist && ! newFileExist)
+                {
+                    // Console.WriteLine("************************************");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine($"The type '{type}' does NOT exist at all in the old directory: " +
+                                      $"{Globals.OldSrcFolder}\n       or in the new directory: {Globals.SrcFolder}");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    // Console.WriteLine("************************************");
+                }
+                else if (oldFileExist && ! newFileExist)
+                {
+                    // Console.WriteLine("************************************");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine($"The type '{type}' does exist in the old directory: " +
+                                      $"{Globals.OldSrcFolder}\n       but NOT in the new directory: {Globals.SrcFolder}");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    // Console.WriteLine("************************************");
+                }
+                else if (!oldFileExist && newFileExist)
+                {
+                    FileHandler.PrintJsonObjectInFile(newFileOutput, Path.Join(Globals.DestFolder, "OnlyInNewFiles"), type);
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine($"The type '{type}' does NOT exist at all in the old directory {Globals.OldSrcFolder}");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                }
+                else
+                {
+                    Summery s = _comparator.Compare(oldFileOutput, newFileOutput);
 
-                var (all, matched) = (s.All, s.Matched);
-                var (unMatched, innerDiff) = (s.UnMatched, s.InnerDifferences);
-                int taskDiffErrorCounter = s.TaskDiffErrorCounter;
-                
-                //var (all, matched, unMatched, innerDiff ) = (s.All, s.Matched, s.UnMatched, s.InnerDifferences);
+                    var (all, matched) = (s.All, s.Matched);
+                    var (unMatched, innerDiff) = (s.UnMatched, s.InnerDifferences);
+                    int taskDiffErrorCounter = s.TaskDiffErrorCounter;
 
-                
-                // print the new resources and the inner differences
-                FileHandler.PrintJsonInFile(unMatched, Path.Join(Globals.DestFolder, "newResources"), type);
-                FileHandler.PrintInnerDifferencesInFile(innerDiff, Path.Join(Globals.DestFolder, "innerDifferences"), type);
-                
-                // Console.WriteLine("-----------------------------------");
-                // Console.WriteLine($"Done comparing the '{type}' files ");
-                Console.WriteLine("************************************");
-                Console.WriteLine($"Number of All new resources = '{all.Count}'");
-                Console.WriteLine($"Of them there are '{unMatched.Count}' completely new resources");
-                Console.WriteLine($"              and '{innerDiff.Count}' resources that have some inner differences");
-                Console.WriteLine($"[For debugging] The Number of resources that exist in both new and old file = '{matched.Count}'");
-                Console.WriteLine($"[For debugging] Through that the code has found '{taskDiffErrorCounter}' taskDiffErrors");
-                Console.WriteLine("************************************");
+                    //var (all, matched, unMatched, innerDiff ) = (s.All, s.Matched, s.UnMatched, s.InnerDifferences);
+
+                    // print the new resources and the inner differences
+                    FileHandler.PrintJsonListInFile(unMatched, Path.Join(Globals.DestFolder, "newResources"), type);
+                    FileHandler.PrintInnerDifferencesInFile(innerDiff,
+                        Path.Join(Globals.DestFolder, "innerDifferences"), type);
+
+                    // Console.WriteLine("-----------------------------------");
+                    // Console.WriteLine($"Done comparing the '{type}' files ");
+                    Console.WriteLine("************************************");
+                    Console.WriteLine($"Number of All new resources = '{all.Count}'");
+                    Console.WriteLine($"Of them there are '{unMatched.Count}' completely new resources");
+                    Console.WriteLine(
+                        $"              and '{innerDiff.Count}' resources that have some inner differences");
+                    Console.WriteLine(
+                        $"[For debugging] The Number of resources that exist in both new and old file = '{matched.Count}'");
+                    Console.WriteLine(
+                        $"[For debugging] Through that the code has found '{taskDiffErrorCounter}' taskDiffErrors");
+                    Console.WriteLine("************************************");
+                }
 
             }
 

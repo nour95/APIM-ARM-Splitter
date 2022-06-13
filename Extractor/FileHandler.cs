@@ -45,7 +45,22 @@ namespace Extractor
             File.Copy(sourceFileName, newFileName, overwrite);
         }
 
-        public static void PrintJsonInFile(List<JObject> resourcesToPrint, string destFolder, string fileType)
+        public static void PrintJsonObjectInFile(JObject FileToPrint, string destFolder, string fileType)
+        {
+            Directory.CreateDirectory(destFolder);
+            
+            // Add the content to the file
+            StringBuilder sb = new StringBuilder();
+            
+            string resultToFile = JsonConvert.SerializeObject(FileToPrint, Formatting.Indented);
+            sb.Append(resultToFile).Append(",\n\n");
+            
+
+            File.WriteAllText(@$"{destFolder}/{fileType.ToLower()}.json", sb.ToString(),
+                Encoding.UTF8);
+        }
+        
+        public static void PrintJsonListInFile(List<JObject> resourcesToPrint, string destFolder, string fileType)
         {
             Directory.CreateDirectory(destFolder);
             
@@ -81,6 +96,7 @@ namespace Extractor
             File.WriteAllText(@$"{destFolder}/{fileType.ToLower()}.json", sb.ToString(),
                 Encoding.UTF8);
         }
+
 
         
     }
